@@ -120,107 +120,183 @@
             grounded: false
         };
 
-        function generateStars(platforms) {
+        let currentMap = { platforms: [], hazards: [], stars: [], goal: {} };
+
+        function generateLevelAlgorithm(lvlIndex) {
+            let platforms = [];
+            let hazards = [];
             let stars = [];
+            
+            platforms.push({ x: 0, y: canvas.height - 150, w: 150, h: 50 });
+
+            let currentX = 220;
+            let currentY = canvas.height - 180;
+            let stepCount = 5 + Math.floor(lvlIndex * 0.5);
+
+            for (let i = 0; i < stepCount; i++) {
+                let gapX = 90 + Math.min(lvlIndex * 4, 60) + Math.sin(i) * 20;
+                let diffY = (Math.sin(i * lvlIndex) * 30) - (lvlIndex * 2);
+                
+                currentX += gapX;
+                currentY += diffY;
+
+                if (currentY > canvas.height - 150) currentY = canvas.height - 150;
+                if (currentY < 200) currentY = 200;
+
+                let platW = Math.max(100 - (lvlIndex * 3), 40);
+                platforms.push({ x: currentX, y: currentY, w: platW, h: 20 });
+
+                if (i % 2 === 0 && lvlIndex > 0) {
+                    hazards.push({ x: currentX - gapX + platW, y: canvas.height - 40, w: gapX - platW, h: 40 });
+                }
+                
+                if (i % 3 === 0 && lvlIndex > 5) {
+                    hazards.push({ x: currentX + (platW / 3), y: currentY - 10, w: 15, h: 10 });
+                }
+            }
+
+            let goalPlat = { x: currentX + 150, y: currentY - 50, w: 120, h: 200 };
+            platforms.push(goalPlat);
+            let goal = { x: goalPlat.x + 40, y: goalPlat.y - 50, w: 40, h: 50 };
+
             for (let i = 0; i < 10; i++) {
-                let plat = platforms[i % platforms.length];
-                let offsetX = (plat.w / 11) * ((i % 10) + 1);
+                let targetPlat = platforms[i % (platforms.length - 1)];
                 stars.push({
-                    x: plat.x + offsetX,
-                    y: plat.y - 35 - (Math.sin(i) * 15),
+                    x: targetPlat.x + (targetPlat.w / 2),
+                    y: targetPlat.y - 30 - (i * 3),
                     collected: false
                 });
             }
-            return stars;
+
+            return { platforms, hazards, stars, goal };
         }
 
-        const levelsData = [
-            {
-                p: [{x: 0, y: 550, w: 250, h: 50}, {x: 350, y: 450, w: 200, h: 40}, {x: 650, y: 350, w: 250, h: 40}],
-                h: [{x: 250, y: 570, w: 100, h: 30}],
-                g: {x: 800, y: 290, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 200, h: 50}, {x: 300, y: 460, w: 150, h: 30}, {x: 550, y: 370, w: 150, h: 30}, {x: 800, y: 280, w: 150, h: 30}],
-                h: [{x: 200, y: 580, w: 600, h: 20}],
-                g: {x: 880, y: 220, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 150, h: 50}, {x: 250, y: 460, w: 90, h: 25}, {x: 450, y: 370, w: 90, h: 25}, {x: 650, y: 280, w: 90, h: 25}, {x: 850, y: 220, w: 150, h: 50}],
-                h: [{x: 150, y: 580, w: 700, h: 20}, {x: 480, y: 350, w: 30, h: 20}],
-                g: {x: 920, y: 160, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 580, w: 150, h: 40}, {x: 220, y: 490, w: 120, h: 20}, {x: 420, y: 400, w: 120, h: 20}, {x: 220, y: 310, w: 120, h: 20}, {x: 50, y: 220, w: 150, h: 40}],
-                h: [{x: 150, y: 610, w: 800, h: 20}, {x: 460, y: 380, w: 40, h: 20}],
-                g: {x: 70, y: 160, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 300, w: 150, h: 300}, {x: 300, y: 420, w: 180, h: 200}, {x: 600, y: 490, w: 180, h: 150}, {x: 900, y: 390, w: 150, h: 250}],
-                h: [{x: 150, y: 580, w: 750, h: 30}, {x: 360, y: 400, w: 50, h: 20}],
-                g: {x: 950, y: 330, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 120, h: 50}, {x: 220, y: 550, w: 60, h: 50}, {x: 380, y: 550, w: 60, h: 50}, {x: 540, y: 550, w: 60, h: 50}, {x: 700, y: 550, w: 60, h: 50}, {x: 850, y: 550, w: 200, h: 50}],
-                h: [{x: 120, y: 570, w: 730, h: 30}],
-                g: {x: 920, y: 490, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 150, h: 50}, {x: 270, y: 450, w: 60, h: 20}, {x: 450, y: 350, w: 60, h: 20}, {x: 630, y: 250, w: 60, h: 20}, {x: 800, y: 200, w: 150, h: 50}],
-                h: [{x: 150, y: 580, w: 650, h: 20}],
-                g: {x: 880, y: 140, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 250, w: 120, h: 250}, {x: 220, y: 340, w: 100, h: 20}, {x: 420, y: 400, w: 100, h: 20}, {x: 620, y: 460, w: 100, h: 20}, {x: 820, y: 520, w: 200, h: 20}],
-                h: [{x: 0, y: 600, w: 1200, h: 20}, {x: 250, y: 320, w: 30, h: 20}],
-                g: {x: 900, y: 460, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 150, h: 50}, {x: 280, y: 550, w: 150, h: 50}, {x: 560, y: 550, w: 150, h: 50}, {x: 840, y: 550, w: 200, h: 50}],
-                h: [{x: 150, y: 560, w: 130, h: 40}, {x: 430, y: 560, w: 130, h: 40}, {x: 710, y: 560, w: 130, h: 40}],
-                g: {x: 900, y: 490, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 120, h: 50}, {x: 220, y: 460, w: 40, h: 20}, {x: 380, y: 370, w: 40, h: 20}, {x: 540, y: 280, w: 40, h: 20}, {x: 700, y: 210, w: 40, h: 20}, {x: 840, y: 210, w: 150, h: 50}],
-                h: [{x: 120, y: 590, w: 800, h: 20}],
-                g: {x: 900, y: 150, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 150, h: 50}, {x: 260, y: 460, w: 120, h: 20}, {x: 480, y: 370, w: 120, h: 20}, {x: 700, y: 280, w: 150, h: 50}],
-                h: [{x: 150, y: 580, w: 600, h: 20}, {x: 300, y: 440, w: 40, h: 20}, {x: 520, y: 350, w: 40, h: 20}],
-                g: {x: 780, y: 220, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 120, h: 50}, {x: 240, y: 550, w: 500, h: 50}, {x: 860, y: 550, w: 120, h: 50}],
-                h: [{x: 120, y: 570, w: 120, h: 30}, {x: 340, y: 530, w: 300, h: 20}, {x: 740, y: 570, w: 120, h: 30}],
-                g: {x: 900, y: 490, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 120, h: 50}, {x: 220, y: 450, w: 80, h: 20}, {x: 400, y: 360, w: 80, h: 20}, {x: 580, y: 450, w: 80, h: 20}, {x: 760, y: 550, w: 150, h: 50}],
-                h: [{x: 120, y: 590, w: 700, h: 20}, {x: 430, y: 340, w: 20, h: 20}],
-                g: {x: 820, y: 490, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 260, w: 150, h: 20}, {x: 260, y: 260, w: 150, h: 20}, {x: 520, y: 260, w: 150, h: 20}, {x: 780, y: 260, w: 150, h: 20}],
-                h: [{x: 0, y: 450, w: 1000, h: 200}, {x: 320, y: 240, w: 30, h: 20}, {x: 580, y: 240, w: 30, h: 20}],
-                g: {x: 850, y: 200, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 580, w: 150, h: 40}, {x: 250, y: 490, w: 50, h: 20}, {x: 400, y: 400, w: 50, h: 20}, {x: 550, y: 310, w: 50, h: 20}, {x: 700, y: 220, w: 50, h: 20}, {x: 850, y: 160, w: 150, h: 40}],
-                h: [{x: 150, y: 610, w: 750, h: 20}],
-                g: {x: 900, y: 100, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 100, h: 50}, {x: 200, y: 550, w: 100, h: 50}, {x: 400, y: 550, w: 100, h: 50}, {x: 600, y: 550, w: 100, h: 50}, {x: 800, y: 550, w: 100, h: 50}, {x: 950, y: 460, w: 100, h: 50}],
-                h: [{x: 100, y: 570, w: 100, h: 20}, {x: 300, y: 570, w: 100, h: 20}, {x: 500, y: 570, w: 100, h: 20}, {x: 700, y: 570, w: 100, h: 20}, {x: 900, y: 570, w: 50, h: 20}],
-                g: {x: 980, y: 400, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 100, h: 50}, {x: 200, y: 460, w: 60, h: 20}, {x: 360, y: 370, w: 60, h: 20}, {x: 520, y: 280, w: 60, h: 20}, {x: 680, y: 370, w: 60, h: 20}, {x: 840, y: 460, w: 150, h: 50}],
-                h: [{x: 100, y: 590, w: 800, h: 20}, {x: 535, y: 260, w: 30, h: 20}],
-                g: {x: 880, y: 400, w: 40, h: 60}
-            },
-            {
-                p: [{x: 0, y: 550, w: 150, h: 50}, {x: 260, y: 550, w: 450, h: 50}, {x: 820, y: 550, w: 150, h: 50}],
-                h: [{x: 150, y: 570, w: 110, h: 20}, {x: 320, y: 530, w: 30, h: 20}, {x: 460, y: 530, w: 30, h: 20}, {x: 600, y: 530, w: 30, h: 20}, {x: 710, y: 570, w: 110, h: 20}],
-g: {x: 860, y: 490, w: 40, h: 60}},{p: [{x: 0, y: 550, w: 100, h: 50}, {x: 200, y: 470, w: 40, h: 12}, {x: 360, y: 390, w: 40, h: 12}, {x: 520, y: 310, w: 40, h: 12}, {x: 680, y: 230, w: 40, h: 12}, {x: 840, y: 160, w: 40, h: 12}, {x: 950, y: 260, w: 100, h: 50}],h: [{x: 100, y: 590, w: 900, h: 20}],g: {x: 970, y: 200, w: 40, h: 60}},{p: [{x: 0, y: 550, w: 80, h: 50}, {x: 160, y: 470, w: 35, h: 12}, {x: 280, y: 390, w: 35, h: 12}, {x: 400, y: 310, w: 35, h: 12}, {x: 520, y: 230, w: 35, h: 12}, {x: 640, y: 170, w: 35, h: 12}, {x: 760, y: 250, w: 35, h: 12}, {x: 880, y: 330, w: 35, h: 12}, {x: 990, y: 410, w: 100, h: 50}],h: [{x: 80, y: 595, w: 1000, h: 20}, {x: 400, y: 290, w: 35, h: 12}, {x: 640, y: 150, w: 35, h: 12}],g: {x: 1010, y: 350, w: 40, h: 60}}];let lvls = [];function initLevels() {lvls = levelsData.map(data => {return {platforms: data.p,hazards: data.h,goal: data.g,stars: generateStars(data.p)};});}function loadLevel(index) {if (index >= lvls.length) {alert('Chúc mừng! Bạn đã hoàn thành toàn bộ 20 thử thách parkour!');currentLevel = 0;initLevels();} else {currentLevel = index;}const lvl = lvls[currentLevel];// ĐÃ SỬA LỖI TẠI ĐÂY: Truy cập phần tử mảng index 0 hợp lệplayer.x = lvl.platforms[0].x + 10;player.y = lvl.platforms[0].y - player.h - 10;player.vx = 0;player.vy = 0;player.grounded = false;starsCollected = lvl.stars.filter(s => s.collected).length;levelDisplay.textContent = Màn: ${currentLevel + 1} / 20;starDisplay.textContent = Sao: ${starsCollected} / 10;}window.addEventListener('keydown', (e) => {if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') keys.up = true;});window.addEventListener('keyup', (e) => {if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') keys.up = false;});function checkCollision(r1, r2) {return r1.x < r2.x + r2.w &&r1.x + r1.w > r2.x &&r1.y < r2.y + r2.h &&r1.y + r1.h > r2.y;}function update() {if (keys.left) player.vx = -player.speed;else if (keys.right) player.vx = player.speed;else player.vx = 0;if (keys.up && player.grounded) {player.vy = -player.jumpForce;player.grounded = false;}player.vy += player.gravity;player.x += player.vx;player.y += player.vy;if (player.x < 0) player.x = 0;if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;player.grounded = false;const lvl = lvls[currentLevel];lvl.platforms.forEach(plat => {if (player.x < plat.x + plat.w &&player.x + player.w > plat.x &&player.y + player.h >= plat.y &&player.y + player.h - player.vy <= plat.y + 12) {player.y = plat.y - player.h;player.vy = 0;player.grounded = true;}});lvl.hazards.forEach(haz => {if (checkCollision(player, haz)) {lvl.stars.forEach(s => s.collected = false);loadLevel(currentLevel);}});lvl.stars.forEach(s => {if (!s.collected) {if (checkCollision(player, { x: s.x - 6, y: s.y - 6, w: 12, h: 12 })) {s.collected = true;starsCollected = lvl.stars.filter(st => st.collected).length;starDisplay.textContent = Sao: ${starsCollected} / 10;}}});if (checkCollision(player, lvl.goal)) {loadLevel(currentLevel + 1);}if (player.y > canvas.height + 150) {lvl.stars.forEach(s => s.collected = false);loadLevel(currentLevel);}}function draw() {ctx.clearRect(0, 0, canvas.width, canvas.height);const lvl = lvls[currentLevel];// Nhân vật chính (Màu Xanh Dương)ctx.fillStyle = '#00adff';ctx.fillRect(player.x, player.y, player.w, player.h);// Nền tảng nhảy (Màu Xám)ctx.fillStyle = '#555555';lvl.platforms.forEach(plat => {ctx.fillRect(plat.x, plat.y, plat.w, plat.h);});// Gai / Dung nham bẫy (Màu Đỏ)ctx.fillStyle = '#ff3333';lvl.hazards.forEach(haz => {ctx.fillRect(haz.x, haz.y, haz.w, haz.h);});// 10 Ngôi sao vàng thu thậplvl.stars.forEach(s => {if (!s.collected) {ctx.fillStyle = '#ffeb3b';ctx.beginPath();ctx.arc(s.x, s.y, 6, 0, Math.PI * 2);ctx.fill();}});// Ô cửa đích (Màu Xanh Lá)ctx.fillStyle = '#00ff66';ctx.fillRect(lvl.goal.x, lvl.goal.y, lvl.goal.w, lvl.goal.h);}function gameLoop() {frameCount++;const time = performance.now();if (time >= lastTime + 1000) {fps = Math.round((frameCount * 1000) / (time - lastTime));fpsDisplay.textContent = FPS: ${fps};frameCount = 0;lastTime = time;}update();draw();requestAnimationFrame(gameLoop);}initLevels();loadLevel(0);gameLoop();
+        function loadLevel(index) {
+            if (index >= 20) {
+                alert('Chúc mừng! Bạn đã hoàn thành toàn bộ 20 thử thách!');
+                currentLevel = 0;
+            } else {
+                currentLevel = index;
+            }
+            
+            currentMap = generateLevelAlgorithm(currentLevel);
+            
+            if (currentMap.platforms && currentMap.platforms[0]) {
+                player.x = currentMap.platforms[0].x + 20;
+                player.y = currentMap.platforms[0].y - player.h - 20;
+            } else {
+                player.x = 50;
+                player.y = canvas.height - 200;
+            }
+            
+            player.vx = 0;
+            player.vy = 0;
+            player.grounded = false;
+            
+            starsCollected = currentMap.stars.filter(s => s.collected).length;
+            levelDisplay.textContent = `Màn: ${currentLevel + 1} / 20`;
+            starDisplay.textContent = `Sao: ${starsCollected} / 10`;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') keys.up = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') keys.up = false;
+        });
+
+        function checkCollision(r1, r2) {
+            return r1.x < r2.x + r2.w &&
+                   r1.x + r1.w > r2.x &&
+                   r1.y < r2.y + r2.h &&
+                   r1.y + r1.h > r2.y;
+        }
+
+        function update() {
+            if (keys.left) player.vx = -player.speed;
+            else if (keys.right) player.vx = player.speed;
+            else player.vx = 0;
+
+            if (keys.up && player.grounded) {
+                player.vy = -player.jumpForce;
+                player.grounded = false;
+            }
+
+            player.vy += player.gravity;
+            player.x += player.vx;
+            player.y += player.vy;
+
+            if (player.x < 0) player.x = 0;
+
+            player.grounded = false;
+
+            currentMap.platforms.forEach(plat => {
+                if (player.x < plat.x + plat.w &&
+                    player.x + player.w > plat.x &&
+                    player.y + player.h >= plat.y &&
+                    player.y + player.h - player.vy <= plat.y + 12) {
+                    player.y = plat.y - player.h;
+                    player.vy = 0;
+                    player.grounded = true;
+                }
+            });
+
+            currentMap.hazards.forEach(haz => {
+                if (checkCollision(player, haz)) {
+                    loadLevel(currentLevel);
+                }
+            });
+
+            currentMap.stars.forEach(s => {
+                if (!s.collected) {
+                    if (checkCollision(player, { x: s.x - 6, y: s.y - 6, w: 12, h: 12 })) {
+                        s.collected = true;
+                        starsCollected = currentMap.stars.filter(st => st.collected).length;
+                        starDisplay.textContent = `Sao: ${starsCollected} / 10`;
+                    }
+                }
+            });
+
+            if (checkCollision(player, currentMap.goal)) {
+                loadLevel(currentLevel + 1);
+            }
+
+            if (player.y > canvas.height + 50) {
+                loadLevel(currentLevel);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let offsetX = 0;
+            if (player.x > canvas.width / 2) {
+                offsetX = player.x - canvas.width / 2;
+            }
+
+            ctx.save();
+            ctx.translate(-offsetX, 0);
+
+            ctx.fillStyle = '#00adff';
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+
+            ctx.fillStyle = '#555555';
+            currentMap.platforms.forEach(plat => {
+                ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+            });
+
+            ctx.fillStyle = '#ff3333';
+            currentMap.hazards.forEach(haz => {
+                ctx.fillRect(haz.x, haz.y, haz.w, haz.h);
+            });
+
+            currentMap.stars.forEach(s => {
+                if (!s.collected) {
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.beginPath();
+ctx.arc(s.x, s.y, 6, 0, Math.PI * 2);ctx.fill();}});ctx.fillStyle = '#00ff66';ctx.fillRect(currentMap.goal.x, currentMap.goal.y, currentMap.goal.w, currentMap.goal.h);ctx.restore();}function gameLoop() {frameCount++;const time = performance.now();if (time >= lastTime + 1000) {fps = Math.round((frameCount * 1000) / (time - lastTime));fpsDisplay.textContent = FPS: ${fps};frameCount = 0;lastTime = time;}update();draw();requestAnimationFrame(gameLoop);}loadLevel(0);gameLoop();
